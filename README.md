@@ -41,8 +41,6 @@ scripts/check_prompt.mjs      # 이미지 프롬프트 검증기 (tier 인지형
 examples/                     # 실측 캘리브레이션 3컷 — 컴파일 프롬프트+생성 결과 쌍
 ```
 
-이미지 레퍼런스 분석·저장·가드닝 루프는 별도 스킬 레포 `image-reference-gardener`로 분리되어 있다(설치는 아래 `<repo-url>` 관례처럼 자기 포크/미러 주소를 사용) — 분석 결과를 생성 프롬프트로 바꿀 때 이 스킬이 이어받는다.
-
 ## 설치
 
 `<repo-url>`을 이 저장소 주소로 바꿔 자기 에이전트 한 줄만 실행한다. 스킬은 클론 즉시 동작한다(외부 패키지 0 — python3·node 표준만 사용).
@@ -68,7 +66,7 @@ git clone <repo-url> ~/.hermes/skills/prompt-writing/master-prompt-writer
 git clone <repo-url> ~/.agents/skills/master-prompt-writer
 ```
 
-설치 확인: 에이전트에게 "프롬프트 만들어줘"라고 하면 이 스킬이 발동해야 한다. 이미지 레인은 "카페 포스터 프롬프트 만들어줘" 같은 이미지 프롬프트 요청으로 확인한다(이미지 첨부 + "키워드 추출/레퍼런스 저장" 류는 분리된 image-reference-gardener 스킬의 트리거다).
+설치 확인: 에이전트에게 "프롬프트 만들어줘"라고 하면 이 스킬이 발동해야 한다. 이미지 레인은 "카페 포스터 프롬프트 만들어줘" 같은 이미지 프롬프트 요청으로 확인한다.
 
 **스킬 시스템이 없는 챗/API** — `SKILL.md` 전문을 시스템 프롬프트로, 필요한 references 섹션만 이어붙인다.
 

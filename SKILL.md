@@ -1,6 +1,6 @@
 ---
 name: master-prompt-writer
-description: "프롬프트 작성·퇴고·라우팅 전용 통합 스킬 — '프롬프트 만들어줘/다듬어줘/검토해줘' 류 요청에 발동. 소관: 자율 goal 루프 지시문, 팀·멀티에이전트 작업지시 프롬프트, 시스템 프롬프트·자동화 잡, 직무 업무 프롬프트, 모델 튜닝·퇴고, UI/디자인 프롬프트, 이미지·배경합성·영상 프롬프트(gpt-image-2·Higgsfield/힉스필드) 정밀 컴파일. 산출 프롬프트는 붙여넣기 블록당 2000자 이내 실측, 이미지 계열은 경로 참조 없는 자기완결. 이미지·디자인 레퍼런스 분석은 image-reference-gardener·design-reference-gardener 소관이고, Higgsfield 인테이크·프리셋 라우팅은 higgsfield-prompt-bridge 선행 뒤 이 스킬로 컴파일한다. 런타임별 호출 문법·동반 스킬 매핑은 references/adapters.md를 따른다. 프롬프트 산출 없이 실제 코드 실행·이미지 생성·문서 조판을 원하는 요청은 이 스킬이 아니라 해당 실행 경로 소관."
+description: "프롬프트 작성·퇴고·라우팅 전용 통합 스킬 — '프롬프트 만들어줘/다듬어줘/검토해줘' 류 요청에 발동. 소관: 자율 goal 루프 지시문, 팀·멀티에이전트 작업지시 프롬프트, 시스템 프롬프트·자동화 잡, 직무 업무 프롬프트, 모델 튜닝·퇴고, UI/디자인 프롬프트, 이미지·배경합성·영상 프롬프트(gpt-image-2·Higgsfield/힉스필드) 정밀 컴파일. 산출 프롬프트는 붙여넣기 블록당 2000자 이내 실측, 이미지 계열은 경로 참조 없는 자기완결. 이미지·디자인 레퍼런스 분석 결과는 이 스킬이 생성 프롬프트로 컴파일하고, Higgsfield 인테이크·프리셋 라우팅은 higgsfield-prompt-bridge 선행 뒤 이 스킬로 컴파일한다. 런타임별 호출 문법·동반 스킬 매핑은 references/adapters.md를 따른다. 프롬프트 산출 없이 실제 코드 실행·이미지 생성·문서 조판을 원하는 요청은 이 스킬이 아니라 해당 실행 경로 소관."
 version: 2.3.1
 license: MIT
 metadata:
@@ -15,7 +15,7 @@ metadata:
 
 프롬프트는 지시서가 아니라 **위임 계약**이다. 실행자는 최상위급 추론의 고자율 실행자다 — 방법을 마이크로매니징하지 말고 결과·경계·검증을 계약으로 못 박는다. 이 스킬은 프롬프트 작성의 단일 진입점이며 어떤 에이전트 런타임에서도 동작한다. 런타임별 호출 문법·동반 스킬 매핑은 [references/adapters.md](references/adapters.md).
 
-**references 접근 규칙**: 라우팅·공통 계약만으로 충분하면 references를 읽지 않는다. 모드 골격·채워진 예시·레인 게이트 카드가 필요하면 [references/templates.md](references/templates.md), 모델별 문법이 필요하면 [references/model-playbooks.md](references/model-playbooks.md), 이미지 정밀 컴파일이 필요하면 [references/image/compiler.md](references/image/compiler.md)에서 시작하고, 인물·패션·한국 로컬리티·사진/필름 어휘는 [references/image/editorial-fashion.md](references/image/editorial-fashion.md)까지 읽는다. 이미지 첨부 레퍼런스의 분석·저장·디자인 추출·가드닝은 별도 레퍼런스 가드닝 스킬 소관이며, 그 분석 결과를 생성 프롬프트로 컴파일할 때 이 스킬의 레인 게이트가 적용된다.
+**references 접근 규칙**: 라우팅·공통 계약만으로 충분하면 references를 읽지 않는다. 모드 골격·채워진 예시·레인 게이트 카드가 필요하면 [references/templates.md](references/templates.md), 모델별 문법이 필요하면 [references/model-playbooks.md](references/model-playbooks.md), 이미지 정밀 컴파일이 필요하면 [references/image/compiler.md](references/image/compiler.md)에서 시작하고, 인물·패션·한국 로컬리티·사진/필름 어휘는 [references/image/editorial-fashion.md](references/image/editorial-fashion.md)까지 읽는다. 이미지 첨부 레퍼런스의 분석 결과를 생성 프롬프트로 컴파일할 때 이 스킬의 레인 게이트가 적용된다.
 
 ## 3층 설계 모델
 
@@ -44,7 +44,7 @@ metadata:
 | 이미지·영상 생성 프롬프트 | **IMAGE** (하위: gpt-image-2 / Higgsfield / 영상) |
 | 원본 사진 피사체 보존 + 배경만 교체 | **IMAGE-COMPOSITE** |
 | UI·페이지·컴포넌트를 만들게 할 프롬프트 | 실행 모드 + **DESIGN 오버레이** |
-| 이미지 첨부/레퍼런스의 분석·저장·가드닝 | → 별도 image-reference-gardener 스킬로 위임(분석 결과의 프롬프트 컴파일만 이 스킬) |
+| 이미지 첨부/레퍼런스 분석 결과를 생성 프롬프트로 변환 | **IMAGE** 또는 **IMAGE-COMPOSITE** |
 | 직전 산출 프롬프트의 부분 수정 — "톤만 바꿔", "이 줄만 고쳐" | **MODEL-델타** (전체 재작성 금지, 지정 축만) |
 | 다단계 프롬프트 체인 — A의 산출이 B의 입력 | 단계별 모드 각각 + **체인 인터페이스 계약** |
 
