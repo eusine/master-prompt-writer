@@ -12,7 +12,9 @@
 
 ## 모델별
 
-- **GPT-5.5** — outcome-first Markdown: `Role / # Personality / # Goal / # Success Criteria / # Constraints / # Output / # Stop Rules`. Stop Rules가 핵심: 툴 결과마다 "핵심 요구에 지금 답할 수 있는가" 셀프체크 + 검색 예산(광역 1회, 재검색은 필수 사실 누락 시만).
+- **GPT-5.6 tier routing** — 가장 싼 tier가 아니라 **요구 권한을 만족하는 가장 낮은 tier**를 고른다. Luna는 빠른 분류·요약·읽기 전용·제안 전용·경량 agentic 작업, Terra는 범위가 닫힌 일반 코딩·리서치·표준 검증이 있는 agentic 작업, Sol은 모호한 다단계 CLI·보안/비밀·여러 정본을 건드리는 통합·실패 복구·최종 판정에 쓴다. 결정론적 `no_agent` 스크립트가 이미 해결하는 일에 Luna를 억지로 넣지 않는다. Terra가 검증/ack를 반복 실패하거나 위험·영향 범위가 커질 때만 Sol로 승격한다. (2026-07-10 공개 tier 설명 + `openai-codex` Luna/Terra 실호출 확인.)
+- **GPT-5.6-sol (flagship lane)** — outcome-first Markdown 헤더 골격은 GPT-5.5와 동일. 운용 초점은 결과 우선·최소 스캐폴딩이다: 결과·경계·검증만 계약하고 how 단계 나열 금지. `reasoning_effort=xhigh`인 런타임에서는 "think harder"·추론 과정 응답 공개 요구·긴 단계 강제를 반복하지 않는다(중복 지시는 노이즈; reasoning-effort 레버가 있으면 프롬프트 우회 대신 레버를 쓴다). Tool stop rule: 툴 결과마다 "핵심 요구에 지금 답할 수 있는가" 셀프체크 후 답 가능하면 멈춘다 — 불확실성을 실제로 줄일 때만 추가 탐색. 독립 읽기는 병렬 호출. 장문 컨텍스트는 최우선 요구를 자료 앞·뒤 앵커로 재진술해 보존. 검증된 결과에서 멈춘다(과잉 재확인 금지). (2026-07-10 로컬 운용 기준 — 프롬프트 운용 관례이며 측정된 모델 능력 주장이 아니다.)
+- **GPT-5.5 (호환/레거시)** — outcome-first Markdown: `Role / # Personality / # Goal / # Success Criteria / # Constraints / # Output / # Stop Rules`. Stop Rules가 핵심: 툴 결과마다 "핵심 요구에 지금 답할 수 있는가" 셀프체크 + 검색 예산(광역 1회, 재검색은 필수 사실 누락 시만). GPT-5.6 tier가 선택된 프로필에는 위 routing과 해당 tier 계약을 적용하되, 5.5 자체의 effort 설정은 추정하지 않는다.
 - **GPT-5.2/5.4 레거시** — XML 블록. 항상 `<output_verbosity_spec>`, 필요 시 `<uncertainty_and_ambiguity>` `<tool_usage_rules>` `<extraction_spec>` `<high_risk_self_check>`. 이 블록 어휘를 다른 모델에 이식 금지. 명시적 단계 나열이 잘 먹히는 예외 모델.
 - **GPT-5.x-Codex** — less is more: 짧게, 프리앰블 요구 금지, 최소 스캐폴딩, "기존 프로젝트 패턴 따르고 실제 변경을 검증하라".
 - **Claude 현행(Fable 5 / Opus 4.8)** — 행동 목록 나열 역효과: 행동당 짧고 정확한 지시 1개. 해석이 리터럴 → 범위 명시("첫 섹션만이 아니라 모든 섹션") + 이유 동반. 4.x 프롬프트 이식 시 과잉 스캐폴딩 삭제가 곧 마이그레이션. CRITICAL/MUST/NEVER 스택 금지(1회+이유). 컨텍스트 카운트다운 노출 금지. **추론 과정을 응답에 복사하라는 요구 금지**(hard refusal 유발) — 필요하면 "결론의 근거를 간단히".

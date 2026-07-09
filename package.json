@@ -1,6 +1,6 @@
 {
   "name": "master-prompt-writer",
-  "version": "2.3.1",
+  "version": "2.3.4",
   "description": "Runtime-agnostic prompt-writing agent skill installer.",
   "license": "MIT",
   "type": "module",
