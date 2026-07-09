@@ -1,110 +1,149 @@
 # master-prompt-writer
 
-프롬프트 작성·퇴고·라우팅 전용 통합 에이전트 스킬. 프롬프트를 "지시서"가 아니라 **위임 계약**(결과·경계·검증)으로 설계한다.
+### 길게 설명하지 마세요. 실행이 끝나는 프롬프트를 쓰세요.
 
-A runtime-agnostic agent skill that turns rough requests into paste-ready prompts — treating every prompt as a **delegation contract** (outcome, boundaries, verification) instead of a to-do list. Korean-first, works with any skill-aware agent or as a plain system prompt.
+[![Release](https://img.shields.io/github/v/release/HeiTuz/master-prompt-writer?style=flat-square)](https://github.com/HeiTuz/master-prompt-writer/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/HeiTuz/master-prompt-writer/ci.yml?branch=main&style=flat-square&label=lint)](https://github.com/HeiTuz/master-prompt-writer/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
 
-## 무엇을 하나
+**master-prompt-writer**는 거친 요청 한 줄을 에이전트가 실제 결과와 검증까지 끝내는 프롬프트로 바꿉니다.
+할 일 목록으로 끝내지 않습니다. 결과물, 완료 기준, 자율 범위, 검증, 중단 조건을 한 번에 잠급니다.
 
-| 요청 | 산출 |
+프롬프트가 결과를 만들지 못하면 아무리 길어도 소음입니다. 이 스킬은 실행에 필요한 것만 남깁니다.
+
+## 왜 이걸 쓰나요?
+
+흔한 프롬프트는 일단 시작하라는 말에서 끝납니다.
+
+> “알아서 잘 고쳐줘. 꼼꼼하게 확인해줘.”
+
+결과는 뻔합니다. 범위가 흔들리고 검증은 빠진 채, “완료했습니다”라는 말만 남습니다.
+
+master-prompt-writer는 모호한 부탁을 실행 계약으로 정리합니다.
+
+- **끝난 모습부터 정합니다.** 무엇을 만들어야 완료인지 먼저 고정합니다.
+- **말이 아니라 증거를 남깁니다.** 경로, 테스트, 개수, 링크처럼 직접 확인할 근거를 요구합니다.
+- **방법은 맡기고 경계만 세웁니다.** 에이전트를 마이크로매니징하지 않아도 범위는 흔들리지 않습니다.
+- **끝낼 때를 분명히 합니다.** 검증을 마치면 멈추고, 막히면 시도한 것과 차단 지점을 남깁니다.
+- **채널에서 잘리지 않습니다.** 붙여넣기 블록은 2,000자 하드라인을 지킵니다.
+
+## 한 스킬로 어디까지?
+
+| 요청 | 바뀌는 결과 |
 |---|---|
-| "flaky 테스트 고치는 goal 써줘" | 자율 에이전트 goal 지시문 (판정 가능한 DoD·게이트·에스컬레이션) |
-| "결제 모듈 리팩토링 팀 킥오프" | 멀티에이전트 팀 킥오프 (레인·검증·경계) |
-| "고객응대 봇 시스템 프롬프트" | 상시 규범형 시스템 프롬프트 |
-| "변호사 계약검토 프롬프트" | 직무 5요소 + 난이도 1~7 업무 프롬프트 |
-| "카페 신메뉴 포스터" | 자기완결 이미지 프롬프트 (HEX·AR·긍정형, C1~C12 카테고리 컴파일) |
-| "패션 화보 한 컷" | 에디토리얼 화보 프롬프트 (포즈·조명 시그니처·컴플라이언스 레인) |
-| "이 사진 배경만 파리로" | 픽셀 고정 배경 합성 프롬프트 (프레임/정체성 락) |
-| "방금 프롬프트 톤만 바꿔" | 델타 수정 (전체 재작성 금지) |
+| “flaky 테스트 고치는 지시문 써줘” | 테스트 증거가 있어야 끝나는 자율 실행 계약 |
+| “결제 모듈 리팩토링 팀 킥오프” | 역할·경계·통합 순서까지 정한 팀 작업지시 |
+| “고객응대 봇 시스템 프롬프트” | 매 턴 같은 기준을 지키는 상시 규범 |
+| “변호사 계약검토 프롬프트” | 현실 제약과 출력 형식을 반영한 업무 프롬프트 |
+| “카페 신메뉴 포스터” | 타이포·비율·카피까지 정한 이미지 프롬프트 |
+| “패션 화보 한 컷” | 포즈·조명·렌즈 감각을 맞춘 에디토리얼 프롬프트 |
+| “이 사진 배경만 파리로” | 인물과 프레임은 보존하는 배경 합성 계약 |
+| “방금 프롬프트 톤만 바꿔” | 나머지는 그대로 두고 지정한 축만 바꾸는 델타 수정 |
 
-## 핵심 계약
+코딩과 리서치부터 시스템 프롬프트, 팀 작업지시, 직무 문서, 이미지와 영상까지 같은 원칙으로 다룹니다.
 
-- **블록당 2000자** — 메신저 1메시지 복붙 기준, 실측(`wc -m`) 필수. 초과 상세는 오버플로우 문서+경로.
-- **이미지 자기완결** — 이미지 모델은 파일을 못 읽는다. 경로 참조 금지, 넘치면 감량→컷 분할.
-- **빈칸은 묻기 전에 채운다** — 대화→저장소 증거→저위험 기본값 순으로 추론, 채운 값은 `가정:` 노트. 질문은 추론 불가 슬롯(원본·정확한 카피·실계정 등)만.
-- **게이트 필요성 테스트** — 금지문은 ①실행자에게 열려 있고 ②시스템이 안 막고 ③실제 발생 가능할 때만. 환경 훅이 이미 막는 배포·재시작을 재금지하는 노이즈를 넣지 않는다.
-- **레인 게이트 카드** — 이미지/합성/영상/디자인 레인별로 네거티브 정책·비율·필수 요소가 다르다. 단일 규칙으로 뭉개지 않는다.
+## GPT-5.6 시대의 모델 라우팅
 
-## 구조
+가장 비싼 모델부터 부르는 건 실력이 아니라 낭비입니다.
 
-```
-SKILL.md                      # 디스패치 커널 — 라우팅·공통 계약·출력 게이트
-references/templates.md       # 모드별 골격 + 실측 라벨 예시 + 레인 게이트 카드
-references/model-playbooks.md # 모델별 문법 (검증 스탬프 포함, 6개월 만료 규칙)
-references/image/             # 이미지 정밀 컴파일 계층 — compiler(철칙·템플릿·사이즈 락),
-                              #   categories(C1~C12), editorial-fashion(화보·패션·사진 어휘),
-                              #   look-and-concept(룩 프리셋·컨셉 축), typography(한글 렌더),
-                              #   production(jsonl 양산·모델 팩트)
-references/adapters.md        # 런타임 아키타입별 로컬라이즈 지점 (포크 후 자기 값 기입)
-scripts/lint.py               # 자기 린트 — 라벨 실측 일치·2000자·정본 단일성
-scripts/check_prompt.mjs      # 이미지 프롬프트 검증기 (tier 인지형, zero-dependency Node)
-scripts/install.mjs           # npm/bun one-shot 설치기
-examples/                     # 실측 캘리브레이션 3컷 — 컴파일 프롬프트+생성 결과 쌍
-```
+- **Luna** — 분류, 요약, 읽기 전용, 가벼운 제안
+- **Terra** — 범위가 닫힌 코딩·리서치·표준 검증
+- **Sol** — 다단계 실행, 보안, 여러 정본의 통합, 실패 복구, 최종 판정
 
-## 설치
+권한과 난이도에 맞는 가장 낮은 tier를 고릅니다. 강한 모델을 쓸 때도 “더 깊게 생각해”를 길게 반복하지 않습니다. 원하는 결과와 검증 기준만 정확히 정합니다.
 
-가장 짧은 설치는 npm/bun one-shot이다. 기본 대상은 Hermes다.
+## 이미지 프롬프트도 대충 쓰지 않습니다
+
+이미지는 형용사를 늘린다고 나아지지 않습니다. 카테고리, 구도, 조명, 타이포, 비율, 보존 대상이 한 장면 안에서 맞물려야 합니다.
+
+필요한 범위는 여기까지 담았습니다.
+
+- C1~C12 이미지 카테고리 라우팅
+- 패션·화보·에디토리얼 사진 어휘
+- 한글 타이포와 카드뉴스 구조
+- 배경 합성용 프레임·정체성 고정 계약
+- JSONL 양산 규칙과 zero-dependency 검증기
+- 이미지·영상 레인별 실패 조건과 검수 기준
+
+## 30초 설치
+
+Hermes에는 바로 설치할 수 있습니다.
 
 ```sh
-npx --yes github:eusine/master-prompt-writer
+npx --yes github:HeiTuz/master-prompt-writer
 # 또는
-bunx github:eusine/master-prompt-writer
+bunx github:HeiTuz/master-prompt-writer
 ```
 
-다른 에이전트에 넣을 때는 대상만 지정한다.
+다른 에이전트에 설치하려면 대상만 지정하세요.
 
 ```sh
-npx --yes github:eusine/master-prompt-writer --target codex
-npx --yes github:eusine/master-prompt-writer --target claude
-npx --yes github:eusine/master-prompt-writer --target gjc
-npx --yes github:eusine/master-prompt-writer --target agents
+npx --yes github:HeiTuz/master-prompt-writer --target codex
+npx --yes github:HeiTuz/master-prompt-writer --target claude
+npx --yes github:HeiTuz/master-prompt-writer --target gjc
+npx --yes github:HeiTuz/master-prompt-writer --target agents
 ```
 
-GitHub CLI/직접 클론을 선호하면 아래 방식도 된다.
+직접 설치하는 방법도 있습니다.
 
 ```sh
-REPO=https://github.com/eusine/master-prompt-writer.git
+REPO=https://github.com/HeiTuz/master-prompt-writer.git
 
-# Hermes 전용 명령
 hermes skills install "$REPO" --category prompt-writing
-
-# Claude Code
-git clone "$REPO" ~/.claude/skills/master-prompt-writer
-
-# Codex CLI
 git clone "$REPO" ~/.codex/skills/master-prompt-writer
-
-# GJC (gajae-code) — 유저 레벨
+git clone "$REPO" ~/.claude/skills/master-prompt-writer
 git clone "$REPO" ~/.gjc/agent/skills/master-prompt-writer
-# GJC — 특정 프로젝트에만
-git clone "$REPO" <project>/.gjc/skills/master-prompt-writer
-
-# Hermes 직접 클론
-git clone "$REPO" ~/.hermes/skills/prompt-writing/master-prompt-writer
-
-# 공용 스킬 디렉토리 컨벤션(~/.agents/skills)을 읽는 에이전트
 git clone "$REPO" ~/.agents/skills/master-prompt-writer
 ```
 
-설치 확인: 에이전트에게 "프롬프트 만들어줘"라고 하면 이 스킬이 발동해야 한다. 이미지 레인은 "카페 포스터 프롬프트 만들어줘" 같은 이미지 프롬프트 요청으로 확인한다.
+스킬 시스템이 없는 챗이나 API에서는 `SKILL.md`를 시스템 프롬프트로 넣고 필요한 reference만 덧붙이세요.
 
-**스킬 시스템이 없는 챗/API** — `SKILL.md` 전문을 시스템 프롬프트로, 필요한 references 섹션만 이어붙인다.
+## 설치 후 바로 써보기
 
-런타임별 호출 접두어·턴 예산·관례 경로는 [references/adapters.md](references/adapters.md)의 아키타입에 자기 환경 값을 채워 로컬라이즈한다.
+설치가 끝나면 평소처럼 요청하세요.
 
-## 검증
-
-```sh
-python3 scripts/lint.py            # 스킬 자기 린트
-node scripts/check_prompt.mjs --test  # 이미지 검증기 셀프테스트 (14 fixtures)
+```text
+이 기능 구현하게 프롬프트 써줘. 실제 테스트까지 돌리고, 무관한 리팩토링은 하지 않게 해.
 ```
 
-스킬이 자기 자신에게 요구하는 하드라인(예시 라벨=실제 길이, 블록당 2000자, 모호어 표기, 정본 단일 정의, 유사문자 0)을 기계 검증한다. PR 전 필수.
+```text
+이 상품 사진은 그대로 두고 배경만 서울의 새벽 골목으로 바꾸는 이미지 편집 프롬프트 만들어줘.
+```
 
-## 설계 계보
+```text
+이 리서치 프롬프트를 GPT-5.6 Terra에 맞게 줄이고, 출처 검증과 중단 조건을 넣어줘.
+```
 
-5개 프롬프트 스킬(위임 계약·goal 작성·모델 패턴·직무 프롬프트·팀 킥오프)을 통합한 뒤, 다중 모델 적대 검증(critic/architect 교차 리뷰)과 5스토리×2패스 반복 개선을 거쳐 v2.1.0으로 고정했고, 이후 개정을 계속하고 있다(현행 버전은 SKILL.md frontmatter가 정본). 모델별 행동 주장에는 검증 날짜 스탬프가 붙어 있으며 6개월 경과 시 재검증이 규칙이다.
+## 약속이 아니라 테스트
+
+```sh
+python3 scripts/lint.py
+node scripts/check_prompt.mjs --test
+npm run smoke:install
+```
+
+- 프롬프트 예시의 실제 글자 수 확인
+- 블록당 2,000자 초과 차단
+- 이미지 프롬프트 good/bad fixture 14종 회귀 테스트
+- 설치기 스모크 테스트
+- GitHub Actions에서도 같은 항목 검증
+
+<details>
+<summary><strong>저장소 구조 보기</strong></summary>
+
+```text
+SKILL.md                       디스패치 커널
+references/templates.md        모드별 골격과 출력 게이트
+references/model-playbooks.md  모델별 문법과 tier 라우팅
+references/image/              이미지 정밀 컴파일 계층
+references/adapters.md         런타임별 설치·호출 어댑터
+scripts/lint.py                스킬 자기 린트
+scripts/check_prompt.mjs       이미지 프롬프트 검증기
+scripts/install.mjs            npm/bun 설치기
+examples/                      프롬프트와 생성 결과 캘리브레이션
+```
+
+</details>
 
 ## License
 
