@@ -448,7 +448,7 @@ v1→v2 업그레이드 7종: Lens character 블록 / Director signature 라인 
 
 ## 12. Format B ↔ Higgsfield Soul 교차 규칙
 
-같은 화보 요청이라도 표면이 다르면 어휘를 변환한다. **gpt-image-2 Format B**로 갈 때는 슬롯 순서, 끝 `AR x:y`, HEX 3~5, Tier-2 assert/tail 페어, 장르앵커를 유지하고 사진 장비는 결과 기반 lens character로 압축한다. **Higgsfield Soul**로 갈 때는 6섹션 장문이 아니라 1문단으로 줄이고, `[프리셋: X · 비율 2:3 — UI에서 선택]` 라벨을 본문 밖에 둔다. Soul은 텍스트 렌더 정확도에 의존하지 않으므로 카피가 필요하면 gpt-image-2 컷으로 분리한다. 동일 인물 시리즈는 Soul ID 훈련 절차의 영역이므로 프롬프트에서 외모 반복으로 정체성을 고정하려 들지 않고, 장면·스타일·행동만 쓴다. 공통으로 자기완결, 2000자, 긍정형 재서술, `natural skin texture, visible pores, subtle film grain`, 실재 인물/상표 금지를 지킨다.
+같은 화보 요청이라도 표면이 다르면 어휘를 변환한다. **gpt-image-2 Format B**로 갈 때는 슬롯 순서, 끝 `AR x:y`, HEX 3~5, Tier-2 assert/tail 페어, 장르앵커를 유지하고 사진 장비는 결과 기반 lens character로 압축한다. **Higgsfield Soul**로 갈 때는 6섹션 장문이 아니라 1문단으로 줄이고, `[프리셋: X · 비율 2:3 — UI에서 선택]` 라벨을 본문 밖에 둔다. 전역 팔레트·무드·컬러 그레이드는 Soul 2.0 웹 `Color signature`에 레퍼런스 1~20장을 넣어 전달하며, 대상별 역할형 HEX 3~5를 Soul 프롬프트 기본값으로 강제하지 않는다. Soul은 텍스트 렌더 정확도에 의존하지 않으므로 카피가 필요하면 gpt-image-2 컷으로 분리한다. 동일 인물 시리즈는 Soul ID 훈련 절차의 영역이므로 프롬프트에서 외모 반복으로 정체성을 고정하려 들지 않고, 장면·스타일·행동만 쓴다. 공통으로 자기완결, 2000자, 긍정형 재서술, `natural skin texture, visible pores, subtle film grain`, 실재 인물/상표 금지를 지킨다.
 
 | 요청 요소 | Format B 변환 | Soul 변환 |
 |---|---|---|
@@ -456,13 +456,14 @@ v1→v2 업그레이드 7종: Lens character 블록 / Director signature 라인 
 | 장르 | `한국 남성지풍 클린 화보 컷` 슬롯 | 프리셋 + `fashion editorial still` 성격만 본문에 |
 | 안전 | Tier-2면 assert 첫 절 + tail AR 직전 | 긍정형 안전 스타일링 문장. 고정 tail을 본문에 억지 삽입하지 않음 |
 | 조명 | `부드러운 창가 자연광이 왼쪽에서...` 같은 결과 절 | `soft window light from camera left` 중심의 짧은 1문단 |
+| 팔레트 | HEX 3~5 + 장면 팔레트 절 | `Color signature` 레퍼런스 1~20장으로 전역 톤 전달. 필요 시 `observed_palette` 3~5개는 soft handoff/QC metadata만 |
 | 텍스트 | 필요 시 gpt-image-2 텍스트 렌더 가드 사용 | 텍스트 비의존. 카피 컷 분리 |
 
 Soul 스틸 예시 형식:
 
 ```text
-[프리셋: Flash Editorial · 비율 2:3 — UI에서 선택]
-late-20s Korean woman, 짧은 웨이브 단발, 무광 블랙 레더 재킷에 실버 이어커프, 밤의 도심 주차장 콘크리트 기둥 앞에 단독으로 서서 카메라를 정면으로 응시. direct on-camera flash 특유의 강한 정면광, 뒤로 짙게 떨어지는 그림자, 배경은 어두운 콘크리트 톤으로 정리. natural skin texture, visible pores, subtle film grain. palette: charcoal #2A2A2A, silver #C9CDD1, deep navy #1A2233.
+[프리셋: Flash Editorial · 비율 2:3 | Color signature: cool urban night reference 1장 — UI에서 선택/업로드]
+late-20s Korean woman, 짧은 웨이브 단발, 무광 블랙 레더 재킷에 실버 이어커프, 밤의 도심 주차장 콘크리트 기둥 앞에 단독으로 서서 카메라를 정면으로 응시. direct on-camera flash 특유의 강한 정면광, 뒤로 짙게 떨어지는 그림자, 배경은 어두운 콘크리트 톤으로 정리. natural skin texture, visible pores, subtle film grain.
 ```
 
 ## 13. 한국 로컬리티·리얼리티 매트릭스 (2026-07 리서치 반영)
