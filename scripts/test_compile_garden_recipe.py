@@ -45,8 +45,13 @@ class CompileGardenRecipeTests(unittest.TestCase):
         self.assertTrue(handoff["reference_requirements"])
         self.assertTrue(handoff["qc_acceptance_criteria"])
         text = handoff["prompt_blocks"][0]["text"]
-        self.assertTrue(text.startswith("[Preset: Flash Editorial"))
+        self.assertTrue(text.startswith("[프리셋: Warm Ambient · 비율 2:3 | Color signature:"))
         self.assertNotIn("Exclude:", text)
+        self.assertEqual(1, text.count("\n"))
+        self.assertNotIn("#C7B7A4", text)
+        self.assertIn("natural skin texture, visible pores, subtle film grain", text)
+        self.assertIn("unbranded clean finish", text)
+
 
 
     def test_design_recipe_routes_from_intended_use(self) -> None:
@@ -60,6 +65,8 @@ class CompileGardenRecipeTests(unittest.TestCase):
         self.assertIn("Visual thesis:", text)
         self.assertIn("Reference decomposition:", text)
         self.assertIn("Viewport QC:", text)
+        self.assertIn("Qualified layout tokens: twelve-column content grid", text)
+
 
 
     def test_composite_renderer_applies_preservation_gate(self) -> None:
@@ -73,15 +80,23 @@ class CompileGardenRecipeTests(unittest.TestCase):
         bundle = self.compiler.compile_recipe(recipe)
         self.assertEqual([], self.contracts.validate_document(bundle, recipe))
         text = bundle["handoff"]["prompt_blocks"][0]["text"]
-        self.assertIn("Relighting dial: low", text)
-        self.assertIn("Do not crop, resample", text)
+        self.assertIn("PIXEL-BOUND COMPOSITE", text)
+        self.assertIn("locked photographic plate", text)
+        self.assertIn("coordinates stay 1:1", text)
+        self.assertIn("dial B partial", text)
+        self.assertIn("FINAL INTENT:", text)
         self.assertIn("FAIL if", text)
+
 
     def test_gpt_image_renderer_requires_palette_gate_and_terminal_ar(self) -> None:
         recipe = copy.deepcopy(self.recipe)
         recipe["intended_use"]["engine"] = "gpt-image-2"
-        with self.assertRaisesRegex(self.compiler.CompileError, "requires 3-5 observed palette"):
+        with self.assertRaisesRegex(self.compiler.CompileError, "requires 3-5 distinct observed #RRGGBB"):
             self.compiler.compile_recipe(recipe)
+        recipe["observations"]["palette"]["items"][0]["value"] = "warm beige without a color token"
+        with self.assertRaisesRegex(self.compiler.CompileError, "received 0"):
+            self.compiler.compile_recipe(recipe)
+        recipe["observations"]["palette"]["items"][0]["value"] = "#C7B7A4"
 
         palette = recipe["observations"]["palette"]["items"]
         for index, value in ((2, "#2A2520"), (3, "#F2E9DD")):
@@ -122,18 +137,27 @@ class CompileGardenRecipeTests(unittest.TestCase):
         recipe = copy.deepcopy(self.recipe)
         recipe["intended_use"]["goal"] = "가" * 1000
         recipe["locks"]["subject"] = ["나" * 500]
-        recipe["exclusions"] = ["다" * 500, "라" * 500]
+        recipe["exclusions"] = ["watermark"]
         with self.assertRaisesRegex(self.compiler.CompileError, "self_contained_prompt_overflow"):
             self.compiler.compile_recipe(recipe)
 
+    def test_positive_lane_rejects_untranslatable_exclusion(self) -> None:
+        recipe = copy.deepcopy(self.recipe)
+        recipe["exclusions"] = ["sentinel forbidden artifact"]
+        with self.assertRaisesRegex(self.compiler.CompileError, "untranslatable_positive_exclusion"):
+            self.compiler.compile_recipe(recipe)
+
     def test_legacy_bridge_adapter_preserves_blocks(self) -> None:
-        bundle = self.compiler.compile_recipe(copy.deepcopy(self.recipe))
+        recipe = copy.deepcopy(self.recipe)
+        recipe["exclusions"] = ["watermark"]
+        bundle = self.compiler.compile_recipe(recipe)
         legacy = self.compiler.legacy_bridge_bundle(bundle)
         self.assertEqual("master-prompt-writer", legacy["compiled_by"])
         self.assertEqual(
             [block["text"] for block in bundle["handoff"]["prompt_blocks"]],
             [block["text"] for block in legacy["blocks"]],
         )
+        self.assertIn("unbranded clean finish", legacy["blocks"][0]["text"])
 
     def test_cli_emits_machine_readable_failure(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

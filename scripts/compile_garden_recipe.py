@@ -6,6 +6,7 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -46,22 +47,27 @@ def _axis_values(recipe: dict[str, Any], axis: str) -> list[str]:
     return [item["value"].strip() for item in evidence.get("items", []) if item.get("value", "").strip()]
 
 
-def _qualified_tokens(recipe: dict[str, Any]) -> list[str]:
+def _render_tokens(tokens: list[dict[str, Any]]) -> list[str]:
     result = []
-    for token in recipe["qualified_tokens"]:
+    for token in tokens:
         scene = f"; scene: {token['scene_fit']}" if token.get("scene_fit") else ""
         result.append(f"{token['term']} ({token['effect']}{scene})")
     return result
 
 
-def _evidence_lines(recipe: dict[str, Any]) -> list[str]:
+def _qualified_tokens(recipe: dict[str, Any]) -> list[str]:
+    return _render_tokens(recipe["qualified_tokens"])
+
+
+def _evidence_lines(recipe: dict[str, Any], *, include_palette: bool = True) -> list[str]:
     labels = {
         "subject": "Subject",
         "camera": "Camera",
         "lighting": "Lighting",
-        "palette": "Palette",
         "layout": "Layout",
     }
+    if include_palette:
+        labels["palette"] = "Palette"
     lines: list[str] = []
     for axis, label in labels.items():
         values = _axis_values(recipe, axis)
@@ -87,44 +93,82 @@ def _lock_line(recipe: dict[str, Any]) -> str:
 
 def _reference_line(recipe: dict[str, Any]) -> str:
     return (
-        f"Reference: attach the supplied media identified by opaque ID "
+        f"Reference: use the attached media identified by opaque ID "
         f"{recipe['source']['reference_id']} for evidence-backed visual guidance."
     )
 
 
-def _positive_scope_line(recipe: dict[str, Any]) -> str:
-    return (
-        "Composition scope: include only the described subject, scene, typography, and materials; "
-        "keep unmentioned surfaces clean and unbranded while every immutable lock remains stable."
-    )
+def _positive_exclusion_line(recipe: dict[str, Any]) -> str:
+    translated: list[str] = []
+    for exclusion in _strings(recipe["exclusions"]):
+        normalized = exclusion.casefold()
+        if any(token in normalized for token in ("people", "person", "crowd")):
+            translated.append("the frame contains only the locked subject count")
+        elif any(token in normalized for token in ("logo", "brand", "watermark")):
+            translated.append("all visible surfaces have an unbranded clean finish")
+        elif any(token in normalized for token in ("identity", "face drift")):
+            translated.append("the same fictional identity remains stable")
+        else:
+            raise CompileError(f"untranslatable_positive_exclusion:{exclusion}")
+    return "Positive boundaries: " + "; ".join(translated) + "."
+
+
+def _higgsfield_preset(recipe: dict[str, Any]) -> str:
+    evidence = " ".join(
+        [recipe["intended_use"]["goal"], *_axis_values(recipe, "lighting"), *_qualified_tokens(recipe)]
+    ).casefold()
+    if any(token in evidence for token in ("flash", "strobe", "direct light")):
+        return "Flash Editorial"
+    if recipe["category"] == "product_reference":
+        return "Subtle Flash"
+    return "Warm Ambient"
 
 
 def _render_higgsfield(recipe: dict[str, Any]) -> str:
-    sections = [
-        "[Preset: Flash Editorial | Aspect ratio: 4:5 — select in UI]",
-        f"Goal: {recipe['intended_use']['goal'].strip()}",
-        *_evidence_lines(recipe),
-        _lock_line(recipe),
-        _positive_scope_line(recipe),
-        _reference_line(recipe),
-        "Generate one still with a stable subject, coherent lighting, and natural material detail.",
+    preset = _higgsfield_preset(recipe)
+    ratio = "2:3" if recipe["category"] == "photo_editorial" else "4:5"
+    label = (
+        f"[프리셋: {preset} · 비율 {ratio} | Color signature: "
+        f"{recipe['source']['reference_id']} 1장 — UI에서 선택/업로드]"
+    )
+    anchors = (
+        "natural skin texture, visible pores, subtle film grain"
+        if recipe["category"] == "photo_editorial"
+        else "natural material texture, coherent contact shadows, subtle film grain"
+    )
+    body_parts = [
+        recipe["intended_use"]["goal"].strip(),
+        *[line.removesuffix(".") for line in _evidence_lines(recipe, include_palette=False)],
+        _lock_line(recipe).removesuffix("."),
+        _positive_exclusion_line(recipe).removesuffix("."),
+        _reference_line(recipe).removesuffix("."),
+        anchors,
     ]
-    return "\n".join(sections)
+    return label + "\n" + ". ".join(body_parts) + "."
+
+
+def _palette_hex_values(recipe: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for raw in _axis_values(recipe, "palette"):
+        for value in re.findall(r"#[0-9A-Fa-f]{6}\b", raw):
+            normalized = value.upper()
+            if normalized not in values:
+                values.append(normalized)
+    return values
 
 
 def _render_gpt_image(recipe: dict[str, Any]) -> str:
-    palette = _axis_values(recipe, "palette")
+    palette = _palette_hex_values(recipe)
     if not 3 <= len(palette) <= 5:
         raise CompileError(
-            "lane_requirement_missing:gpt-image-2 requires 3-5 observed palette values; "
+            "lane_requirement_missing:gpt-image-2 requires 3-5 distinct observed #RRGGBB values; "
             f"received {len(palette)}"
         )
-    evidence = _evidence_lines(recipe)
     sections = [
         f"Core scene: {recipe['intended_use']['goal'].strip()}",
-        *evidence,
+        *_evidence_lines(recipe),
         _lock_line(recipe),
-        _positive_scope_line(recipe),
+        _positive_exclusion_line(recipe),
         _reference_line(recipe),
         "Output: one finished, self-contained image with exact subject and layout continuity.",
         "AR 2:3",
@@ -134,15 +178,23 @@ def _render_gpt_image(recipe: dict[str, Any]) -> str:
 
 def _render_composite(recipe: dict[str, Any]) -> str:
     sections = [
-        f"Edit operation: {recipe['intended_use']['goal'].strip()}",
-        "Preserve the supplied subject, identity, pose, framing, and all locked attributes exactly.",
+        "PIXEL-BOUND COMPOSITE — This is background-replacement compositing, not image generation. "
+        "The source is a locked photographic plate defining the final canvas; subject pixels are read-only "
+        "and only background pixels may be generated.",
+        "FRAME LOCK: output dimensions and aspect ratio equal the input exactly; coordinates stay 1:1. "
+        "Do not crop, zoom, pan, reframe, recenter, resample, warp, or redistribute margins.",
+        f"BACKGROUND ONLY: {recipe['intended_use']['goal'].strip()}",
         *_evidence_lines(recipe),
         _lock_line(recipe),
-        "Relighting dial: low — match only the new environment's light direction and color temperature.",
-        "Unify contact shadow, edge spill, depth cues, and grain across subject and environment.",
-        "Do not crop, resample, beautify, reshape, or replace any locked subject detail.",
+        _positive_exclusion_line(recipe),
+        "LIGHTING — dial B partial: exposure within ±0.3 stop, environment tint ≤0.2, "
+        "color-temperature shift ≤200K, skin undertone preservation ≥0.75.",
+        "INTEGRATION: match contact shadow to light direction; unify subject/background grain and depth cues.",
         _reference_line(recipe),
-        "FAIL if framing, identity, subject geometry, or any immutable lock changes.",
+        "FINAL INTENT: immediate same-subject recognition outranks aesthetic improvement; "
+        "the background is supporting context and the locked subject is absolute.",
+        "FAIL if subject pixels move, the canvas changes, the face is redrawn, fabric changes, "
+        "perspective mismatches, or any immutable lock drifts.",
     ]
     return "\n".join(sections)
 
@@ -152,6 +204,7 @@ def _render_design(recipe: dict[str, Any]) -> str:
     layout = "; ".join(_axis_values(recipe, "layout")) or "the observed hierarchy"
     palette = "; ".join(_axis_values(recipe, "palette")) or "the observed color roles"
     direction = "; ".join(_qualified_tokens(recipe))
+    layout_tokens = "; ".join(_render_tokens(recipe.get("layout_tokens", [])))
     sections = [
         f"Implementation goal: {recipe['intended_use']['goal'].strip()}",
         f"Direction lock: {direction}. Signature element: {layout}.",
@@ -160,6 +213,7 @@ def _render_design(recipe: dict[str, Any]) -> str:
         f"2. Tone — {direction}; use {palette}.",
         f"3. Behavior — responsive adaptation must retain the same hierarchy and locked subjects.",
         f"Reference decomposition: structure={layout}; tone={direction}; color={palette}.",
+        *([f"Qualified layout tokens: {layout_tokens}."] if layout_tokens else []),
         *_evidence_lines(recipe),
         _lock_line(recipe),
         f"Anti-slop constraints: {'; '.join(_strings(recipe['exclusions']))}.",
@@ -174,7 +228,7 @@ def _render_generic_image(recipe: dict[str, Any]) -> str:
         f"Goal: {recipe['intended_use']['goal'].strip()}",
         *_evidence_lines(recipe),
         _lock_line(recipe),
-        _positive_scope_line(recipe),
+        _positive_exclusion_line(recipe),
         _reference_line(recipe),
         "Return one result that preserves all evidence-backed attributes.",
     ])
