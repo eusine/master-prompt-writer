@@ -6,9 +6,6 @@
 
 역할 책임과 capability 선택은 [model-playbooks.md](model-playbooks.md) §역할·권한 라우팅이 유일한 정본이다. 이 파일은 설치 위치, 런타임 역할 매핑, 실제 모델 선택 위치, per-role routing이 없을 때의 fallback만 기록한다. 실제 모델명과 로컬 선택값은 각 런타임의 설정 파일, CLI 옵션, 또는 사용자의 세션 설정에 두며 private local selector를 하드코딩하지 않는다.
 
-## PromptBundle 소비자 마이그레이션
-
-기본 기계 핸드오프는 `prompt-bundle/v1`이다. 설치된 `higgsfield-prompt-bridge` 2.0.0의 기존 `higgsfield-job/v1` 소비자는 아직 `prompt_bundle.compiled_by`와 `prompt_bundle.blocks[].text` 형태를 검사하므로, 전환 기간에는 `python3 scripts/compile_garden_recipe.py recipe.json --format legacy-bridge`를 사용한다. 이 adapter는 새 bundle의 검증 완료 prompt block만 lossless 복사하고 재컴파일하지 않는다. 새 소비자는 `handoff.protocol == "generation-handoff/v1"`을 읽고 locks·axes·negative·reference·QC까지 직접 보존해야 한다. 알 수 없는 protocol/version은 자유형 prompt로 강등하지 말고 명시적으로 거부한다.
 
 ## Claude
 
@@ -30,6 +27,7 @@
 - 역할 매핑: Hermes skill invocation이 prime이다. Hermes에 planner/worker/reviewer skill 또는 agent lane이 있으면 core 역할에 매핑한다. 로컬 전용 경로나 동반 workflow 이름은 공개 core로 올리지 않는다.
 - 모델 선택 위치: Hermes runtime config. 이 저장소는 로컬 선택값이나 채널 선택값을 쓰지 않는다.
 - fallback: role lanes가 없으면 Hermes prime이 단일 실행 계약을 산출하고, critic 역할은 최종 self-check checklist로 축소한다.
+- 생성 실행 표면: 이 스킬은 IMAGE 컴파일을 끝낸 완성 프롬프트를 반환한다. 실제 생성은 사용자가 선택한 이미지·영상 도구가 담당하며, 비율·프리셋·미디어 참조 같은 구조화 옵션은 해당 도구 호출에 직접 전달한다.
 
 ## GJC
 

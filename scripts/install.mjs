@@ -67,7 +67,7 @@ function isEmptyDir(p) {
 
 function shouldSkip(rel) {
   const parts = rel.split(path.sep);
-  return parts.some((p) => [".git", "node_modules", "docs-internal", ".gjc"].includes(p)) ||
+  return parts.some((p) => [".git", "node_modules", ".gjc"].includes(p)) ||
     rel === "package-lock.json" ||
     rel === "bun.lockb" ||
     rel === "bun.lock";

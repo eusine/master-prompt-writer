@@ -115,6 +115,31 @@
     }
   },
   {
+    "path": "fixtures/good/promo_patterns.jsonl",
+    "mode": "jsonl",
+    "expect": {
+      "ok": true
+    }
+  },
+  {
+    "path": "fixtures/bad/promo_gates.jsonl",
+    "mode": "jsonl",
+    "expect": {
+      "ok": false,
+      "codes": [
+        "E-PROMO-ROUTE",
+        "E-PROMO-CARD-DRIFT",
+        "E-PROMO-LOOK",
+        "E-PROMO-EFFECT",
+        "E-PROMO-SUBJECT",
+        "E-PROMO-FINISH",
+        "E-PROMO-PALETTE-CONFLICT",
+        "E-PROMO-KO-MASK-LEN",
+        "E-PROMO-METAUI"
+      ]
+    }
+  },
+  {
     "path": "fixtures/bad/records.jsonl",
     "mode": "jsonl",
     "expect": {

@@ -51,6 +51,13 @@
 | `tier` | `0`, `1`, `2` | 기본 0. |
 | `lane` | `standard` 또는 `editorial` | `editorial`이면 tier 2. |
 | `palette` | HEX 배열 | full_prompt 반영 누락 시 `W-PALETTE-MISS`. |
+| `promo_pattern` | `P1`~`P8` | `cut_type: promo_poster`일 때 필수. 선택 파일은 `promo-router.md` 정본. |
+| `look_preset` | `L1`~`L8` | promo에서 필수. L9는 구현 본문이 없어 금지. |
+| `promo_text_effect` | P별 canonical effect | P1 mask, P2 extrusion, P3/P6 occlusion, P4 interlock, P5 printed_meta_ui, P7 rotated_axis, P8 staging. |
+| `promo_subject` | 비어 있지 않은 문자열 | 타이포와 물리적으로 얽히는 주 피사체. `full_prompt`에 그대로 등장해야 한다. |
+| `finishing_devices` | 문자열 배열 1~3개 | 바코드·메타 행·크롭마크·에디션 번호·세로 라벨·스탬프·종이 물성 등 실제 선택한 장치만 기록. |
+| `palette_authority` | `P` 또는 `L` | promo에서 필수. |
+| `palette_sources` | `["P"]` 또는 `["L"]` | 권한자와 같은 단일 소스만 허용. |
 | `ar` | `1:1`, `2:3`, `3:4`, `4:5`, `3:2`, `4:3`, `16:9`, `9:16` | 프롬프트 끝 AR과 다르면 `E-REC-ARMATCH`. |
 | `size` | 사이즈락 6종 | 필수, ar 매핑 불일치 시 `E-SIZE-AR`. |
 | `quality` | `low`, `medium`, `high` | 필수, `auto` 금지. |
@@ -248,7 +255,25 @@ Reply only with the saved file path.
 | `E-TIER2-POS` | NEGATIVE_TAIL이 AR 직전이 아님 | AR 직전 마지막 절로 이동. |
 | `E-TIER2-PAIR` | tail 단독 사용 | SAFETY_ASSERT 앵커 3개 이상과 페어. |
 
-### 9.4 워닝
+### 9.4 promo 라우팅·게이트
+
+| 코드 | 조건 | 조치 |
+|---|---|---|
+| `E-PROMO-ROUTE` | `promo_poster`가 C7로 라우팅됨 | C3/C5 + P 패턴으로 이동. |
+| `E-PROMO-PATTERN` | P1~P8 단일 선택 없음 | 라우터에서 P 하나 선택. |
+| `E-PROMO-LOOK` | L1~L8 단일 룩 없음 | 구현된 L 하나 선택. |
+| `E-PROMO-EFFECT` | P와 `promo_text_effect`가 불일치 | P별 canonical effect로 정렬. |
+| `E-PROMO-SUBJECT` | `promo_subject`가 없거나 prompt에 없음 | 타이포와 얽히는 주 피사체를 명시. |
+| `E-PROMO-PALETTE-CONFLICT` | P/L 팔레트 권한이 둘이거나 메타 불일치 | 권한과 source를 하나로 축소. |
+| `E-PROMO-COLOR-LOCK` | 최종 HEX가 2~3색 밖 | 권한 팔레트만 남김. |
+| `E-PROMO-TYPE-STRUCTURE` | 타이포와 피사체의 물리 관계 없음 | 마스크·압출·가림·회전·인쇄 구조를 명시. |
+| `E-PROMO-FINISH` | 마감 장치가 1~3개 밖 | 허용 장치 1~3개만 유지. |
+| `E-PROMO-CARD-DRIFT` | C7 소품·배지 밀도로 후퇴 | 정보 장치를 걷고 위계·여백 긴장 복구. |
+| `E-PROMO-COPY` | 정확 카피가 1회가 아님 | `korean_copy`를 따옴표 안에 1회. |
+| `E-PROMO-KO-MASK-LEN` | 한글 마스킹·압출이 3음절 이상 | 2음절로 축소하거나 효과 변경. |
+| `E-PROMO-METAUI` | P5가 실제 앱 화면으로 읽힘 | 인쇄된 메타 그래픽으로 재서술. |
+
+### 9.5 워닝
 
 | 코드 | 조건 | 조치 |
 |---|---|---|

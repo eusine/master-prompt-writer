@@ -159,6 +159,67 @@ function nearestSize(size) {
   const d = (s) => { const [W, H] = s.split("x").map(Number); return Math.abs(W - w) + Math.abs(H - h) + Math.abs(W / H - w / h) * 512; };
   return [...SIZE_WHITELIST].sort((a, b) => d(a) - d(b))[0];
 }
+function validatePromo(rec, errors) {
+  const isPromo = rec.cut_type === "promo_poster" || rec.promo_pattern !== undefined;
+  if (!isPromo) return;
+
+  const prompt = typeof rec.full_prompt === "string" ? rec.full_prompt : "";
+  const scene = prompt.split(/\bCamera\s*:/i)[0];
+  const patternEffects = new Map([
+    ["P1", "mask"], ["P2", "extrusion"], ["P3", "occlusion"],
+    ["P4", "interlock"], ["P5", "printed_meta_ui"], ["P6", "occlusion"],
+    ["P7", "rotated_axis"], ["P8", "staging"],
+  ]);
+  if (!new Set(["C3", "C5"]).has(rec.category))
+    err(errors, "E-PROMO-ROUTE", "디자인 promo_poster는 C3/C5 + P 패턴으로만 라우팅할 수 있음.");
+  if (!patternEffects.has(rec.promo_pattern))
+    err(errors, "E-PROMO-PATTERN", "promo_poster는 promo_pattern P1~P8 중 정확히 1개가 필요.");
+  if (!/^L[1-8]$/.test(rec.look_preset ?? ""))
+    err(errors, "E-PROMO-LOOK", "promo_poster는 구현된 look_preset L1~L8 중 정확히 1개가 필요.");
+  if (patternEffects.has(rec.promo_pattern) && rec.promo_text_effect !== patternEffects.get(rec.promo_pattern))
+    err(errors, "E-PROMO-EFFECT", `${rec.promo_pattern}의 promo_text_effect는 ${patternEffects.get(rec.promo_pattern)}여야 함.`);
+  if (typeof rec.promo_subject !== "string" || !rec.promo_subject.trim() || !scene.includes(rec.promo_subject.trim()))
+    err(errors, "E-PROMO-SUBJECT", "promo_subject는 비어 있지 않고 Scene에 그대로 등장해야 함.");
+
+  const authority = rec.palette_authority;
+  const sources = rec.palette_sources;
+  if (!["P", "L"].includes(authority) || !Array.isArray(sources) || sources.length !== 1 || sources[0] !== authority)
+    err(errors, "E-PROMO-PALETTE-CONFLICT", "promo 팔레트 권한은 P 또는 L 하나이며 palette_sources도 같은 단일 소스여야 함.");
+
+  const hexes = new Set(prompt.match(/#[0-9A-Fa-f]{6}\b/g) || []);
+  if (hexes.size < 2 || hexes.size > 3)
+    err(errors, "E-PROMO-COLOR-LOCK", `promo는 중복 제거한 HEX 2~3색 하드 락(현재 ${hexes.size}색).`);
+
+  const physical = /(mask(?:ed|ing)?|마스킹|extrud(?:ed|ing)|압출|overlap(?:ping)?|오클루전|behind|뒤로|interlock(?:ing)?|break(?:ing)? (?:out|outside)|프레임 밖|rotat(?:ed|ing)|회전|printed (?:on|at)|인쇄된|emboss(?:ed|ing)|deboss(?:ed|ing)|지지 구조)/i;
+  if (!physical.test(scene))
+    err(errors, "E-PROMO-TYPE-STRUCTURE", "Scene에서 promo_subject와 마스크·압출·가림·회전·인쇄 구조가 함께 확인되지 않음.");
+
+  const finishers = rec.finishing_devices;
+  if (!Array.isArray(finishers) || finishers.length < 1 || finishers.length > 3 || finishers.some((value) => typeof value !== "string" || !value.trim()))
+    err(errors, "E-PROMO-FINISH", "promo finishing_devices는 비어 있지 않은 문자열 1~3개여야 함.");
+
+  const driftSignals = [
+    /(3D|three-dimensional).{0,20}(clay|클레이)/i,
+    /(?:3\s*[~–-]\s*5|three to five).{0,20}(props?|소품)/i,
+    /(badge|배지|리본 밴드|스티커 칩|체크리스트 미니카드)/i,
+  ];
+  if (driftSignals.filter((token) => token.test(prompt)).length >= 2)
+    err(errors, "E-PROMO-CARD-DRIFT", "promo가 C7의 3D 히어로·소품·배지 밀도 문법으로 후퇴함.");
+
+  if (typeof rec.korean_copy === "string" && rec.korean_copy.trim()) {
+    const copy = rec.korean_copy.replace(/\s+/g, " ").trim();
+    const quotedCount = quotesOf(prompt).filter((quoted) => quoted === copy).length;
+    const totalCount = prompt.split(copy).length - 1;
+    if (quotedCount !== 1 || totalCount !== 1)
+      err(errors, "E-PROMO-COPY", `promo korean_copy는 전체 prompt와 따옴표 안에 각각 정확히 1회여야 함(전체 ${totalCount}, 따옴표 ${quotedCount}).`);
+    const syllables = [...copy].filter((char) => /[가-힣]/.test(char)).length;
+    if (["mask", "extrusion"].includes(rec.promo_text_effect) && syllables > 2)
+      err(errors, "E-PROMO-KO-MASK-LEN", `한글 마스킹·압출 안전권은 2음절(현재 ${syllables}음절).`);
+  }
+
+  if (rec.promo_pattern === "P5" && (!/(printed|인쇄)/i.test(prompt) || /(app screenshot|앱 스크린샷|실제 앱 화면)/i.test(prompt)))
+    err(errors, "E-PROMO-METAUI", "P5는 실제 앱 스크린샷이 아니라 인쇄된 메타 UI 그래픽이어야 함.");
+}
 
 function validateRecord(rec, ids, opts) {
   const errors = [], warnings = [];
@@ -176,6 +237,7 @@ function validateRecord(rec, ids, opts) {
   }
   if (rec.ar && rec.size && AR_SIZE_MAP[rec.ar] && !AR_SIZE_MAP[rec.ar].includes(rec.size))
     err(errors, "E-SIZE-AR", `ar ${rec.ar} ↔ size ${rec.size} 매핑 불일치(허용: ${AR_SIZE_MAP[rec.ar].join(", ")}).`);
+  validatePromo(rec, errors);
   let t = { format: rec.format ?? null, tier: rec.tier ?? null };
   if (typeof rec.full_prompt === "string") {
     const m = rec.full_prompt.trim().match(/AR\s+(\d+)\s*:\s*(\d+)$/i);
