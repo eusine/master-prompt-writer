@@ -5,6 +5,26 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "job_id", "operation", "prompt", "output"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "edit"
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "required": ["input_images"],
+        "properties": {
+          "input_images": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "schema_version": {
       "const": "heituz-image-production-handoff/v1"

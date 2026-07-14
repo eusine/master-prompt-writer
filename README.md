@@ -105,7 +105,6 @@ bunx github:HeiTuz/HeiTuzMPW#v2.8.0
 npx --yes github:HeiTuz/HeiTuzMPW#v2.8.0 -- --target codex
 bunx github:HeiTuz/HeiTuzMPW#v2.8.0 -- --target gpt
 npx --yes github:HeiTuz/HeiTuzMPW#v2.8.0 -- --target claude
-npx --yes github:HeiTuz/HeiTuzMPW#v2.8.0 -- --target gjc
 npx --yes github:HeiTuz/HeiTuzMPW#v2.8.0 -- --target agents
 ```
 

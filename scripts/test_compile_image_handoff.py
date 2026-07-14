@@ -47,6 +47,25 @@ class CompileImageHandoffTests(unittest.TestCase):
     def test_edit_requires_input(self):
         with self.assertRaisesRegex(MODULE.CompileError, "requires at least one"):
             MODULE.compile_request(request(input_images=[]))
+    def test_all_supported_lowercase_output_extensions_match_schema(self):
+        schema = json.loads((ROOT / "contracts/v1/image-production-handoff.schema.json").read_text())
+        pattern = schema["properties"]["output"]["properties"]["filename"]["pattern"]
+        for suffix in ("png", "jpg", "jpeg", "webp"):
+            result = MODULE.compile_request(request(output={"filename": f"catalog-01.{suffix}"}))
+            self.assertRegex(result["output"]["filename"], pattern)
+
+    def test_rejects_uppercase_output_extension(self):
+        for suffix in ("PNG", "JPG", "JPEG", "WEBP"):
+            with self.subTest(suffix=suffix):
+                with self.assertRaisesRegex(MODULE.CompileError, "one PNG, JPEG, or WebP basename"):
+                    MODULE.compile_request(request(output={"filename": f"catalog-01.{suffix}"}))
+
+    def test_schema_requires_input_for_edit(self):
+        schema = json.loads((ROOT / "contracts/v1/image-production-handoff.schema.json").read_text())
+        invariant = schema["allOf"][0]
+        self.assertEqual(invariant["if"]["properties"]["operation"]["const"], "edit")
+        self.assertIn("input_images", invariant["then"]["required"])
+        self.assertEqual(invariant["then"]["properties"]["input_images"]["minItems"], 1)
 
     def test_rejects_absolute_private_path(self):
         with self.assertRaisesRegex(MODULE.CompileError, "portable relative path"):

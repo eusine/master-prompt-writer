@@ -16,7 +16,7 @@ MAX_NEGATIVE_CHARS = 1000
 JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 ASPECT_RATIO = re.compile(r"^[1-9][0-9]*:[1-9][0-9]*$")
 IMAGE_SIZE = re.compile(r"^[1-9][0-9]{2,4}x[1-9][0-9]{2,4}$")
-OUTPUT_NAME = re.compile(r"^[^/\\]+\.(?:png|jpe?g|webp)$", re.IGNORECASE)
+OUTPUT_NAME = re.compile(r"^[^/\\]+\.(?:png|jpe?g|webp)$")
 PROMPT_FIELDS = ("subject", "action", "scene", "composition", "lighting", "style", "text")
 ALLOWED_FIELDS = {
     "schema_version", "job_id", "operation", *PROMPT_FIELDS, "negative_prompt",
