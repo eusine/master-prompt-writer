@@ -14,7 +14,7 @@ SPEC.loader.exec_module(MODULE)
 class ImageVariationCompilerTests(unittest.TestCase):
     def request(self):
         return {
-            "concept": "홍대 골목의 독립 잡지 같은 고양이 초상",
+            "concept": "서브컬처 독립 잡지 같은 고양이 초상",
             "style": "anti-mainstream editorial, dry and strange",
             "locks": {"subject": "same fictional black cat", "text": "none"},
             "output_prefix": "images",
