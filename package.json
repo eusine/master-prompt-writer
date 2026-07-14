@@ -17,13 +17,17 @@
     "examples/**",
     "references/**",
     "scripts/**",
+    "!contracts/**/__pycache__/**",
+    "!contracts/**/*.pyc",
     "!scripts/**/__pycache__/**",
     "!scripts/**/*.pyc"
   ],
   "scripts": {
     "lint": "python3 scripts/lint.py",
-    "test": "node scripts/check_prompt.mjs --test && python3 scripts/test_promo_contract.py && python3 scripts/test_compile_apparel_handoff.py && python3 scripts/test_compile_image_handoff.py && node scripts/test_installer_privacy.mjs",
+    "test": "node scripts/check_prompt.mjs --test && python3 scripts/test_promo_contract.py && python3 scripts/test_compile_apparel_handoff.py && python3 scripts/test_compile_image_handoff.py && python3 scripts/test_compile_garden_recipe.py && python3 scripts/test_contracts.py && node scripts/test_installer_privacy.mjs",
     "test:apparel": "python3 scripts/test_compile_apparel_handoff.py",
+    "test:contracts": "python3 scripts/test_contracts.py",
+    "test:garden": "python3 scripts/test_compile_garden_recipe.py",
     "test:handoff": "python3 scripts/test_compile_image_handoff.py",
     "test:promo": "python3 scripts/test_promo_contract.py",
     "smoke:install": "node scripts/install.mjs --dest /tmp/HeiTuzMPW-install-smoke --force --quiet",
