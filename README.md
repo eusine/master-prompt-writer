@@ -62,6 +62,45 @@ python3 scripts/compile_image_variations.py --request request.json --count 100 -
 
 ## 30초면 붙습니다
 
+한 줄이면 설치기가 이 컴퓨터의 에이전트 환경을 자동 감지해 맞는 위치에 설치합니다.
+
+```sh
+npx --yes github:HeiTuz/HeiTuzMPW
+# 또는
+bunx github:HeiTuz/HeiTuzMPW
+```
+
+### 자동 감지가 하는 일
+
+- **감지 신호**: `~/.hermes`, `~/.claude`, `~/.codex` 같은 잘 알려진 스킬 디렉터리·CLI 설치 흔적만 봅니다. 비밀값이나 설정 파일 내용은 읽지 않습니다.
+- **대화형 터미널**: 감지된 대상을 보여주고 하나 또는 여러 개를 선택·확인합니다.
+- **CI·비대화형**: 절대 묻지 않습니다. 1개 감지 → 그대로 설치. 여러 개 감지 → Hermes 우선, Hermes가 없으면 `hermes > claude > codex` 우선순위의 첫 감지 대상. 0개 감지 → Hermes 위치에 설치(문서화된 기본값).
+- 명시 `--target`/`--dest`는 항상 자동 감지를 이깁니다.
+
+### 어디에, 어떤 payload가 설치되나
+
+| 대상 | 설치 위치 | payload |
+|---|---|---|
+| `hermes` (기본·권장) | `~/.hermes/skills/prompt-writing/HeiTuzMPW` | 정본 Hermes-native 표면 |
+| `claude` | `~/.claude/skills/HeiTuzMPW` | **Claude Code용 마이그레이션 표면** |
+| `codex` / `gpt` | `~/.codex/skills/HeiTuzMPW` | **GPT/Codex용 마이그레이션 표면** |
+| `gjc` | `~/.gjc/agent/skills/HeiTuzMPW` | 정본 표면 |
+| `agents` | `~/.agents/skills/HeiTuzMPW` | 정본 표면 |
+
+Hermes가 기본·선호 환경입니다. Claude Code와 Codex는 규칙 본문이 동일한 채 호스트 통합 표면(발동·도구 명칭·frontmatter)만 마이그레이션된 변형을 받습니다 — 구조와 근거는 [agents/README.md](agents/README.md).
+
+### 명시 설치
+
+```sh
+npx --yes github:HeiTuz/HeiTuzMPW -- --target hermes
+npx --yes github:HeiTuz/HeiTuzMPW -- --target claude
+npx --yes github:HeiTuz/HeiTuzMPW -- --target codex     # --target gpt 동일
+npx --yes github:HeiTuz/HeiTuzMPW -- --target all       # 감지된 전부에 설치
+npx --yes github:HeiTuz/HeiTuzMPW -- --dest /custom/skills/HeiTuzMPW
+```
+
+재설치는 `--force`, 조용한 설치는 `--quiet`. `--target auto`는 기본 동작인 자동 감지를 명시적으로 켭니다.
+
 ### 이미지 제작까지 한 번에 붙일 때: 추천
 
 ```sh
@@ -70,30 +109,13 @@ npx --yes --package github:HeiTuz/HeiTuzImgGen2 heituz-imggen2
 bunx --package github:HeiTuz/HeiTuzImgGen2 heituz-imggen2
 ```
 
-이 unified 설치는 **공식 Codex CLI + HeiTuzImgGen2 + HeiTuzMPW**를 함께 세팅합니다. 이후에는 아래 한 줄로 둘 다 갱신합니다.
+이 unified 설치는 **공식 Codex CLI + HeiTuzImgGen2 + HeiTuzMPW**를 함께 세팅합니다. 같은 자동 감지를 쓰며, ImgGen2와 MPW는 항상 같은 호스트에 나란히 설치됩니다 — ImgGen2는 Hermes에, MPW는 다른 곳에 가는 어긋남이 없습니다. 이후에는 아래 한 줄로 둘 다 갱신합니다.
 
 ```sh
 heituz update
 ```
 
-### MPW만 독립 설치할 때
-
-```sh
-npx --yes --package github:HeiTuz/HeiTuzMPW heituzmpw
-# 또는
-bunx --package github:HeiTuz/HeiTuzMPW heituzmpw
-```
-
-다른 에이전트 환경에 설치할 때는 대상만 지정하면 됩니다.
-
-```sh
-npx --yes --package github:HeiTuz/HeiTuzMPW heituzmpw -- --target codex
-bunx --package github:HeiTuz/HeiTuzMPW heituzmpw -- --target gpt
-npx --yes --package github:HeiTuz/HeiTuzMPW heituzmpw -- --target claude
-npx --yes --package github:HeiTuz/HeiTuzMPW heituzmpw -- --target agents
-```
-
-직접 설치도 가능합니다.
+### 직접 설치
 
 ```sh
 REPO=https://github.com/HeiTuz/HeiTuzMPW.git
@@ -104,6 +126,8 @@ git clone "$REPO" ~/.claude/skills/HeiTuzMPW
 git clone "$REPO" ~/.gjc/agent/skills/HeiTuzMPW
 git clone "$REPO" ~/.agents/skills/HeiTuzMPW
 ```
+
+git clone은 정본 표면을 그대로 복사합니다. Claude·Codex용 마이그레이션 표면까지 적용하려면 installer를 쓰세요.
 
 ## 짧게 던져도 단단하게 끝냅니다
 

@@ -7,12 +7,19 @@ metadata:
   category: prompt-writing
   locale: ko-KR
   doctrine: unified-delegation-contract
+  host_surface: claude
+  canonical_source: "HeiTuz/HeiTuzMPW SKILL.md v2.9.1"
   updated_at: "2026-07-14"
   model_claims_reviewed_at: "2026-07-07"
   role_routing_reviewed_at: "2026-07-10"
 ---
 
-# HeiTuzMPW — 디스패치 커널
+# HeiTuzMPW — 디스패치 커널 (Claude Code 표면)
+
+> **호스트 통합 — Claude Code.** 이 파일은 Claude Code 설치본(`~/.claude/skills/HeiTuzMPW`)의 진입 표면이다. 규칙 본문은 정본 SKILL.md와 동일하며, 호스트 통합 표면(프런트매터·발동·도구 명칭)만 마이그레이션됐다.
+> - **발동**: Claude Code가 frontmatter `description` 매칭으로 스킬을 자동 로드한다 — "프롬프트 만들어줘/다듬어줘/검토해줘" 류 요청이 트리거다.
+> - **도구 매핑**: 길이 실측(`wc -m`)·검증기(`node scripts/check_prompt.mjs`)·컴파일러(`python3 scripts/compile_*.py`) 실행은 Bash 도구, references/ 파일 확인은 Read 도구, 오버플로우 문서(`/tmp/prompt-handoffs/<slug>.md`) 작성은 Write 도구를 쓴다.
+> - **역할 라우팅**: 단일 세션이면 prime. Task 하위 에이전트가 가능하면 [references/adapters.md](references/adapters.md) §Claude 매핑(planner=read-only 조사, worker=bounded 실행, critic=frozen artifact 리뷰)을 따른다.
 
 프롬프트는 지시서가 아니라 **위임 계약**이다. 실행자는 최상위급 추론의 고자율 실행자다 — 방법을 마이크로매니징하지 말고 결과·경계·검증을 계약으로 못 박는다. 이 스킬은 프롬프트 작성의 단일 진입점이며 어떤 에이전트 런타임에서도 동작한다. 런타임별 호출 문법·동반 스킬 매핑은 [references/adapters.md](references/adapters.md).
 

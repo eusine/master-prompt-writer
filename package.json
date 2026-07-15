@@ -1,6 +1,6 @@
 {
   "name": "heituzmpw",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "description": "Runtime-agnostic prompt-writing agent skill installer.",
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,7 @@
     "LICENSE",
     "README.md",
     "SKILL.md",
+    "agents/**",
     "contracts/**",
     "examples/**",
     "references/**",
@@ -20,11 +21,17 @@
     "!contracts/**/__pycache__/**",
     "!contracts/**/*.pyc",
     "!scripts/**/__pycache__/**",
-    "!scripts/**/*.pyc"
+    "!scripts/**/*.pyc",
+    "!**/.gjc/**",
+    "!**/.omx/**",
+    "!**/__pycache__/**",
+    "!**/*.pyc",
+    "!**/*.bak",
+    "!**/.*"
   ],
   "scripts": {
     "lint": "python3 scripts/lint.py",
-    "test": "node scripts/check_prompt.mjs --test && python3 scripts/test_promo_contract.py && python3 scripts/test_compile_apparel_handoff.py && python3 scripts/test_compile_image_handoff.py && python3 scripts/test_compile_image_variations.py && python3 scripts/test_compile_garden_recipe.py && python3 scripts/test_contracts.py && node scripts/test_installer_privacy.mjs",
+    "test": "node scripts/check_prompt.mjs --test && python3 scripts/test_promo_contract.py && python3 scripts/test_compile_apparel_handoff.py && python3 scripts/test_compile_image_handoff.py && python3 scripts/test_compile_image_variations.py && python3 scripts/test_compile_garden_recipe.py && python3 scripts/test_contracts.py && node scripts/test_agent_detection.mjs && node scripts/test_installer_privacy.mjs && node scripts/smoke_runtime_installs.mjs",
     "test:apparel": "python3 scripts/test_compile_apparel_handoff.py",
     "test:contracts": "python3 scripts/test_contracts.py",
     "test:garden": "python3 scripts/test_compile_garden_recipe.py",

@@ -7,12 +7,19 @@ metadata:
   category: prompt-writing
   locale: ko-KR
   doctrine: unified-delegation-contract
+  host_surface: codex
+  canonical_source: "HeiTuz/HeiTuzMPW SKILL.md v2.9.1"
   updated_at: "2026-07-14"
   model_claims_reviewed_at: "2026-07-07"
   role_routing_reviewed_at: "2026-07-10"
 ---
 
-# HeiTuzMPW — 디스패치 커널
+# HeiTuzMPW — 디스패치 커널 (GPT/Codex 표면)
+
+> **호스트 통합 — GPT/Codex.** 이 파일은 Codex 설치본(`~/.codex/skills/HeiTuzMPW`, `--target codex`와 `--target gpt` 동일)의 진입 표면이다. 규칙 본문은 정본 SKILL.md와 동일하며, 호스트 통합 표면(프런트매터·발동·도구 명칭)만 마이그레이션됐다.
+> - **발동**: Codex가 skills 디렉터리에서 이 SKILL.md를 발견해 로드한다. 이 디렉터리의 AGENTS.md는 설치본 안내 표면이다 — 리포지토리 기여 규칙이 아니다.
+> - **도구 매핑**: 길이 실측(`wc -m`)·검증기(`node scripts/check_prompt.mjs`)·컴파일러(`python3 scripts/compile_*.py`)·references/ 확인은 전부 Codex shell로 실행한다.
+> - **역할 라우팅**: Codex coding surface는 prime으로 운용한다. native subagent가 가능하면 [references/adapters.md](references/adapters.md) §GPT/Codex 매핑(planner=read-only planning, worker=bounded implementation, critic=independent verifier)을 따른다.
 
 프롬프트는 지시서가 아니라 **위임 계약**이다. 실행자는 최상위급 추론의 고자율 실행자다 — 방법을 마이크로매니징하지 말고 결과·경계·검증을 계약으로 못 박는다. 이 스킬은 프롬프트 작성의 단일 진입점이며 어떤 에이전트 런타임에서도 동작한다. 런타임별 호출 문법·동반 스킬 매핑은 [references/adapters.md](references/adapters.md).
 
